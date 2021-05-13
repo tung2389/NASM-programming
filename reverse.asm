@@ -54,7 +54,7 @@ reverse:
     jmp reverse
 
 printReverse:
-    mov [ecx], dword 0x0a ; Add new line character at the end of reversed string
+    mov [ecx], byte 0x0a ; Add new line character at the end of reversed string
     mov ecx, output
     call sprint
 
