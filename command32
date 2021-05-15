@@ -7,4 +7,5 @@ display/x $edi
 display/x $esi
 display/x $ebp
 display/16xw $esp
+set disassembly-flavor intel
 break _start

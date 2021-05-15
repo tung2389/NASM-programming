@@ -15,14 +15,18 @@ SECTION .text
 global  _start
  
 _start:
+
+    ; Print input message
     mov	edx, lenInputMsg     ;message length
     mov	ecx, inputMsg     ;message to write
     call fprint
 
+    ; Read input
     mov edx, 255 ; number of bytes to read
     mov ecx, input ; reserved space to store our input (known as a buffer)
     call read
 
+    ; Print output message
     mov edx, lenOutputMsg
     mov ecx, outputMsg
     call fprint
