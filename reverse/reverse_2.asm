@@ -1,4 +1,4 @@
-%include 'utility32.asm'
+%include '../utility32.asm'
 
 SECTION .data
     inputMsg db 'Enter your string: ', 0Ah 
@@ -15,18 +15,14 @@ SECTION .text
 global  _start
  
 _start:
-
-    ; Print input message
     mov	edx, lenInputMsg     ;message length
     mov	ecx, inputMsg     ;message to write
     call fprint
 
-    ; Read input
     mov edx, 255 ; number of bytes to read
     mov ecx, input ; reserved space to store our input (known as a buffer)
     call read
 
-    ; Print output message
     mov edx, lenOutputMsg
     mov ecx, outputMsg
     call fprint
@@ -49,8 +45,8 @@ reverse:
     cmp eax, input
     jb printReverse
 
-    movzx esi, byte [eax]
-    mov [ecx], esi
+    mov dl, byte [eax]
+    mov [ecx], dl
 
     inc ecx
     dec eax 
@@ -58,7 +54,7 @@ reverse:
     jmp reverse
 
 printReverse:
-    mov [ecx], byte 0x0a ; Add new line character at the end of reversed string
+    mov [ecx], dword 0x0a ; Add new line character at the end of reversed string
     mov ecx, output
     call sprint
 

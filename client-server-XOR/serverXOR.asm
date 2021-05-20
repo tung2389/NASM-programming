@@ -1,4 +1,4 @@
-%include 'utility.asm'
+%include '../utility.asm'
 
 SECTION .bss
     msg: resb 10000
