@@ -1,81 +1,73 @@
+%define SYS_READ 0
+%define SYS_WRITE 1
+%define SYS_EXIT 60
+
+%define STDIN 0
+%define STDOUT 1
+
 ;------------------------------------------
-; int slen(char * s (in eax))
+; int slen(char * s (%rax))
 ; String length calculation function
 slen:
-    push    ebx
-    mov     ebx, eax
- 
-nextchar:
-    cmp     byte [eax], 0
-    jz      finished
-    inc     eax
-    jmp     nextchar
- 
-finished:
-    sub     eax, ebx
-    pop     ebx
-    
-    ret
+    push    rbx
+    mov     rbx, rax
 
+nextchar:
+    cmp     byte [rax], 0
+    jz      finished
+    inc     rax
+    jmp     nextchar
+
+finished:
+    sub     rax, rbx
+    pop     rbx
+
+    ret
+    
 ;------------------------------------------
-; void sprint(String message (in ecx))
+; void sprint(char *buf (%rsi))
 ; String printing function
 sprint:
-    push    edx
-    push    ebx
-    push    eax
-    
-    mov     eax, ecx
+    push    rdx
+    push    rax
+    push    rdi
+
+    mov     rax, rsi
     call    slen
-    mov     edx, eax
- 
-    mov     ebx, 1
-    mov     eax, 4
-    int     80h
+    mov     rdx, rax
+
+    mov     rdi, STDOUT
+    mov     rax, SYS_WRITE
+    syscall
+
+    pop     rdi
+    pop     rax
+    pop     rdx
+
+    ret
+
+
+; char* buf (%rsi)
+emptyString:
+    push rsi
+
+iterate:
+    cmp byte [rsi], 0
+    jz done
+    mov byte [rsi], 0
+    inc rsi
+    jmp iterate 
+
+done:
+    pop rsi
     
-    pop     eax
-    pop     ebx
-    pop     edx 
-
     ret
 
-;------------------------------------------
-; void fprint(String message (in ecx), int len (in edx))
-; String printing function
-fprint:
-
-    push    ebx
-    push    eax
- 
-    mov     ebx, 1
-    mov     eax, 4
-    int     80h
-
-    pop     eax
-    pop     ebx
-
-    ret
-
-; void read 
-read:
-    push    ebx
-    push    eax
-
-    mov     ebx, 0 ; write to the STDIN file
-    mov     eax, 3 ; invoke SYS_READ (kernel opcode 3)
-    int     80h
-
-    pop     eax
-    pop     ebx
-
-    ret
- 
 ;------------------------------------------
 ; void exit()
 ; Exit program and restore resources
 quit:
-    mov     ebx, 0
-    mov     eax, 1
-    int     80h
+    xor rdi, rdi ; Set exit status to 0
+    mov rax, SYS_EXIT
+    syscall
 
-    ret

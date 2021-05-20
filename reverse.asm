@@ -1,4 +1,4 @@
-%include 'utility.asm'
+%include 'utility32.asm'
 
 SECTION .data
     inputMsg db 'Enter your string: ', 0Ah 

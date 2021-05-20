@@ -2,3 +2,4 @@ nasm-2.15.05.tar.gz
 nasm-2.15.05/
 *.o
 main
+.vscode/
