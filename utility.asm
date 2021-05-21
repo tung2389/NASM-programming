@@ -25,7 +25,7 @@ finished:
     ret
     
 ;------------------------------------------
-; void sprint(char *buf (%rsi))
+; void sprint(char* buf (%rsi))
 ; String printing function
 sprint:
     push    rdx
@@ -46,7 +46,6 @@ sprint:
 
     ret
 
-
 ; char* buf (%rsi)
 emptyString:
     push rsi
@@ -61,6 +60,95 @@ iterate:
 done:
     pop rsi
     
+    ret
+
+; Parameters:
+;   char* s (%rdi)
+; Output: rax
+stringToInt:
+    push rdi
+    push rbx
+    push rdx
+
+    mov rdx, rdi
+
+iterat:
+    cmp byte [rdi], 48
+    jb convertToNum
+    inc rdi
+    jmp iterat
+
+convertToNum:
+    dec rdi
+    mov rcx, 1
+    mov rax, 0
+
+iterateBack:
+    cmp rdi, rdx
+    jb doneConversion
+
+    movzx rbx, byte [rdi]
+    sub rbx, 48 ; ASCII code to digit
+    
+    imul rbx, rcx
+    add rax, rbx
+
+    imul rcx, 10
+    dec rdi
+
+    jmp iterateBack
+
+doneConversion:
+
+    pop rdx
+    pop rbx
+    pop rdi
+
+    ret
+
+; Parameters:
+;   int a (%rdi), char* buf (%rsi)
+intToString:
+    push rdx
+    push rbx
+    push rax
+    push rcx
+
+    mov rbx, 10
+    mov rax, rdi
+    mov rcx, 0
+
+divideLoop:
+    
+    cmp rax, 0
+    je writeDigitToStr
+
+    xor rdx, rdx
+    div rbx
+    add rdx, 48
+    push rdx
+    inc rcx
+
+    jmp divideLoop
+
+writeDigitToStr:
+    cmp rcx, 0
+    jz endLoop
+
+    pop rdx
+    mov byte [rsi], dl
+    inc rsi
+    dec rcx
+
+    jmp writeDigitToStr
+
+endLoop:
+
+    pop rcx
+    pop rax
+    pop rbx
+    pop rdx
+
     ret
 
 ;------------------------------------------
