@@ -62,6 +62,12 @@ _socketLoop:
     pop rsi
 
     call readMsg
+
+    push rdi
+    mov rdi, msg
+    call encrypt
+    pop rdi
+
     call socketWrite
 
     mov rax, msg
@@ -70,6 +76,12 @@ _socketLoop:
     je _socketClose
 
     call socketRead
+
+    push rdi
+    mov rdi, msg
+    call decrypt
+    pop rdi
+
     call printMsg
 
     jmp _socketLoop
@@ -110,8 +122,85 @@ printMsg:
 
     ret
 
+; Parameters:
+;     char* s (%rdi)
+
+encrypt:   
+    push rsi
+    push rax
+
+    mov rsi, key
+
+encryptLoop:
+    cmp byte [rdi], 0
+    je finishEncryption
+
+    cmp byte [rsi], 0
+    je .repeatKey
+
+    jmp .iterate
+
+.repeatKey:
+    mov rsi, key
+
+.iterate:
+    movzx rax, byte [rdi]
+    xor al, byte [rsi]
+    mov [rdi], al
+
+    inc rdi
+    inc rsi
+
+    jmp encryptLoop
+
+finishEncryption:
+    pop rax
+    pop rsi
+
+    ret
+
+; Parameters:
+;     char* s (%rdi)
+
+decrypt:   
+    push rsi
+    push rax
+
+    mov rsi, key
+
+decryptLoop:
+    cmp byte [rdi], 0
+    je finishDecryption
+
+    cmp byte [rsi], 0
+    je .repKey
+
+    jmp .iterateDec
+
+.repKey:
+    mov rsi, key
+
+.iterateDec:
+    movzx rax, byte [rdi]
+    xor al, byte [rsi]
+    mov [rdi], al
+
+    inc rdi
+    inc rsi
+
+    jmp decryptLoop
+
+finishDecryption:
+    pop rax
+    pop rsi
+
+    ret
+
 _socketClose:
     mov rax, SYS_CLOSE
     syscall
 
 call quit
+
+SECTION .data:
+    key db 'iwoeru328947298ewff$!@#$%^^&*)&#^#*&!#@!@))8u382daad~-=', 0
