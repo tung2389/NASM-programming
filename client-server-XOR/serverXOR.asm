@@ -1,7 +1,9 @@
 %include '../utility.asm'
+%include './socketUtility.asm'
 
 SECTION .bss
     msg: resb 10000
+    lenMsg: resb 3
 
 SECTION .text
 
@@ -79,125 +81,61 @@ _socketLoop:
     call emptyString
     pop rsi
 
+    ; Read message's len information sent by client
+    mov rsi, lenMsg ; char* buf
+    mov rdx, 3 ; size_t count
     call socketRead
 
+    ; Read message sent by client
+    mov rsi, msg ; char* buf
+    mov rdx, 10000 ; size_t count
+    call socketRead
+
+    ; Decrypt client's message
     push rdi
     mov rdi, msg
     call decrypt
     pop rdi
     
+    ; Print client's message
     call printMsg
 
+    ; If no more data received, close the socket
     mov rax, msg
     call slen
     cmp rax, 0
     je _socketClose
 
+    ; Calculate message's len
+    mov rax, msg
+    call slen
+
+    ; Write message len into a string to send that information to client
+    push rdi
+    mov rdi, rax
+    mov rsi, lenMsg
+    call intToString
+    pop rdi
+
+    ; Send message's len to the client
+    mov rsi, lenMsg
+    mov rdx, 3
+    call socketWrite
+
+    ; Encrypt the message
     push rdi
     mov rdi, msg
     call encrypt
     pop rdi
 
+    ; Send message to the client
+    mov rsi, msg
+    mov rdx, 10000
     call socketWrite
 
     jmp _socketLoop
 
 
-socketRead: 
-    mov rsi, msg ; char* buf
-    mov rdx, 10000 ; size_t count
-    mov rax, SYS_READ
-    syscall
-
-    ret
-    
-printMsg:
-    mov rsi, msg
-    call sprint
-
-    ret
-
-socketWrite:
-    mov rsi, msg
-    mov rdx, 10000
-    mov rax, SYS_WRITE
-    syscall
-
-    ret
-
-; Parameters:
-;     char* s (%rdi)
-
-encrypt:   
-    push rsi
-    push rax
-
-    mov rsi, key
-
-encryptLoop:
-    cmp byte [rdi], 0
-    je finishEncryption
-
-    cmp byte [rsi], 0
-    je .repeatKey
-
-    jmp .iterate
-
-.repeatKey:
-    mov rsi, key
-
-.iterate:
-    movzx rax, byte [rdi]
-    xor al, byte [rsi]
-    mov [rdi], al
-
-    inc rdi
-    inc rsi
-
-    jmp encryptLoop
-
-finishEncryption:
-    pop rax
-    pop rsi
-
-    ret
-
-; Parameters:
-;     char* s (%rdi)
-
-decrypt:   
-    push rsi
-    push rax
-
-    mov rsi, key
-
-decryptLoop:
-    cmp byte [rdi], 0
-    je finishDecryption
-
-    cmp byte [rsi], 0
-    je .repKey
-
-    jmp .iterateDec
-
-.repKey:
-    mov rsi, key
-
-.iterateDec:
-    movzx rax, byte [rdi]
-    xor al, byte [rsi]
-    mov [rdi], al
-
-    inc rdi
-    inc rsi
-
-    jmp decryptLoop
-
-finishDecryption:
-    pop rax
-    pop rsi
-
-    ret
 
 _socketClose:
     mov rax, SYS_CLOSE

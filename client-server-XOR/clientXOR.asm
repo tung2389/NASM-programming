@@ -1,7 +1,11 @@
+; rdi holds the socket file descriptor for the whole program
+
 %include '../utility.asm'
+%include './socketUtility.asm'
 
 SECTION .bss
     msg: resb 10000
+    lenMsg: resb 3
 
 SECTION .text
 %define SYS_EXIT 60
@@ -61,22 +65,59 @@ _socketLoop:
     call emptyString
     pop rsi
 
-    call readMsg
+    ; Read message from STDIN
+    push rdi
+    mov rdi, STDIN
+    mov rsi, msg  
+    mov rdx, 10000   
+    mov rax, SYS_READ
+    syscall
+    pop rdi
+    
+    ; Calculate message's len
+    mov rax, msg
+    call slen
 
+    ; Write message len into a string to send that information to server
+    push rdi
+    mov rdi, rax
+    mov rsi, lenMsg
+    call intToString
+    pop rdi
+
+    ; Send message's len to the server
+    mov rsi, lenMsg
+    mov rdx, 3
+    call socketWrite
+
+    ; Encrypt the message
     push rdi
     mov rdi, msg
     call encrypt
     pop rdi
-
+ 
+    ; Send the encrypted message to the server
+    mov rsi, msg
+    mov rdx, 10000
     call socketWrite
 
+    ; If no more data sent, close the socket
     mov rax, msg
     call slen
     cmp rax, 0
     je _socketClose
 
+    ; Read message's len information sent by server
+    mov rsi, lenMsg ; char* buf
+    mov rdx, 3 ; size_t count
     call socketRead
 
+    ; Read the message sent by server
+    mov rsi, msg ; char* buf
+    mov rdx, 10000 ; size_t count
+    call socketRead
+
+    ; Decrypt the message sent by server
     push rdi
     mov rdi, msg
     call decrypt
@@ -86,115 +127,6 @@ _socketLoop:
 
     jmp _socketLoop
 
-readMsg:
-    push rdi
-
-    ; Read input
-    mov rdi, STDIN
-    mov rsi, msg  ; reserved space to store our input (known as a buffer)
-    mov rdx, 10000    ; number of bytes to read
-    mov rax, SYS_READ
-    syscall
-
-    pop rdi
-
-    ret
-
-socketWrite:
-    mov rsi, msg
-    mov rdx, 10000
-    mov rax, SYS_WRITE
-    syscall
-
-    ret
-
-socketRead:
-    mov rsi, msg ; char* buf
-    mov rdx, 10000 ; size_t count
-    mov rax, SYS_READ
-    syscall
-
-    ret
-
-printMsg:
-    mov rsi, msg
-    call sprint
-
-    ret
-
-; Parameters:
-;     char* s (%rdi)
-
-encrypt:   
-    push rsi
-    push rax
-
-    mov rsi, key
-
-encryptLoop:
-    cmp byte [rdi], 0
-    je finishEncryption
-
-    cmp byte [rsi], 0
-    je .repeatKey
-
-    jmp .iterate
-
-.repeatKey:
-    mov rsi, key
-
-.iterate:
-    movzx rax, byte [rdi]
-    xor al, byte [rsi]
-    mov [rdi], al
-
-    inc rdi
-    inc rsi
-
-    jmp encryptLoop
-
-finishEncryption:
-    pop rax
-    pop rsi
-
-    ret
-
-; Parameters:
-;     char* s (%rdi)
-
-decrypt:   
-    push rsi
-    push rax
-
-    mov rsi, key
-
-decryptLoop:
-    cmp byte [rdi], 0
-    je finishDecryption
-
-    cmp byte [rsi], 0
-    je .repKey
-
-    jmp .iterateDec
-
-.repKey:
-    mov rsi, key
-
-.iterateDec:
-    movzx rax, byte [rdi]
-    xor al, byte [rsi]
-    mov [rdi], al
-
-    inc rdi
-    inc rsi
-
-    jmp decryptLoop
-
-finishDecryption:
-    pop rax
-    pop rsi
-
-    ret
 
 _socketClose:
     mov rax, SYS_CLOSE
