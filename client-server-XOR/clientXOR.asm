@@ -60,8 +60,15 @@ socketConnect:
 
 _socketLoop:
 
+    ; Clear msg
     push rsi
     mov rsi, msg
+    call emptyString
+    pop rsi
+
+    ; Clear lenMsg
+    push rsi
+    mov rsi, lenMsg
     call emptyString
     pop rsi
 
@@ -73,10 +80,8 @@ _socketLoop:
     mov rax, SYS_READ
     syscall
     pop rdi
-    
-    ; Calculate message's len
-    mov rax, msg
-    call slen
+
+    ; rax now holds message length
 
     ; Write message len into a string to send that information to server
     push rdi

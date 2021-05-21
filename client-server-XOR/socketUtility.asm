@@ -66,7 +66,6 @@ finishEncryption:
 
 ; Parameters:
 ;     char* s (%rdi)
-
 decrypt:   
     push rsi
     push rax

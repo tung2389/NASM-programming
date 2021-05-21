@@ -106,9 +106,7 @@ _socketLoop:
     cmp rax, 0
     je _socketClose
 
-    ; Calculate message's len
-    mov rax, msg
-    call slen
+    ; rax now holds message length
 
     ; Write message len into a string to send that information to client
     push rdi
